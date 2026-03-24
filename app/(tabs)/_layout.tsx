@@ -1,35 +1,87 @@
-import { Tabs } from 'expo-router';
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Tabs, router, usePathname } from 'expo-router';
+import { Timer, CalendarDays, Settings } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '../../src/hooks/useTheme';
+import { semantic } from '../../src/constants/colors';
+import { layout } from '../../src/constants/spacing';
+import { typography } from '../../src/constants/typography';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+function TabBarIcon({ focused, Icon }: { focused: boolean; Icon: React.ElementType }) {
+  const { colors } = useTheme();
+  return <Icon size={24} color={focused ? semantic.accent : colors.textTertiary} />;
+}
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { isDark, colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+        tabBarStyle: {
+          position: 'absolute',
+          borderTopWidth: 0,
+          backgroundColor: 'transparent',
+          elevation: 0,
+          height: layout.tabBarHeight,
+        },
+        tabBarBackground: () => (
+          <BlurView
+            intensity={isDark ? 60 : 80}
+            tint={isDark ? 'dark' : 'light'}
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                borderTopWidth: 0.5,
+                borderTopColor: colors.tabBarBorder,
+              },
+            ]}
+          >
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: colors.tabBarGlass },
+              ]}
+            />
+          </BlurView>
+        ),
+        tabBarActiveTintColor: semantic.accent,
+        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarLabelStyle: {
+          ...typography.badge,
+          fontSize: 10,
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: t('tabs.timer'),
+          tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} Icon={Timer} />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="history"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: t('tabs.history'),
+          tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} Icon={CalendarDays} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: t('tabs.settings'),
+          tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} Icon={Settings} />,
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({});

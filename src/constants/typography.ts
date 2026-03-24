@@ -1,0 +1,30 @@
+export const typography = {
+  timerCountdown: {
+    fontFamily: 'System' as const,
+    fontVariant: ['tabular-nums'] as const,
+    fontWeight: '200' as const,
+    letterSpacing: -3,
+    sizes: {
+      normal: 72,
+      large: 96,
+      xlarge: 120,
+    },
+  },
+  phaseLabel: {
+    fontFamily: 'System' as const,
+    fontSize: 16,
+    fontWeight: '800' as const,
+    letterSpacing: 6,
+    textTransform: 'uppercase' as const,
+  },
+  h1: { fontSize: 32, fontWeight: '700' as const, letterSpacing: -0.5 },
+  h2: { fontSize: 24, fontWeight: '600' as const, letterSpacing: -0.3 },
+  h3: { fontSize: 20, fontWeight: '600' as const, letterSpacing: 0 },
+  body: { fontSize: 17, fontWeight: '400' as const, lineHeight: 24 },
+  bodySmall: { fontSize: 15, fontWeight: '400' as const, lineHeight: 20 },
+  caption: { fontSize: 13, fontWeight: '400' as const, lineHeight: 18 },
+  label: { fontSize: 12, fontWeight: '600' as const, letterSpacing: 0.8, textTransform: 'uppercase' as const },
+  badge: { fontSize: 11, fontWeight: '700' as const, letterSpacing: 0.3 },
+  statNumber: { fontSize: 28, fontWeight: '700' as const, fontVariant: ['tabular-nums'] as const },
+  statLabel: { fontSize: 12, fontWeight: '500' as const, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+};
