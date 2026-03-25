@@ -5,16 +5,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Plus, Dumbbell } from 'lucide-react-native';
+import { Plus, Dumbbell, Lock } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useTemplateStore } from '../../src/stores/templateStore';
 import { useTimerStore } from '../../src/stores/timerStore';
+import { usePreferencesStore } from '../../src/stores/preferencesStore';
 import { TimerCard } from '../../src/components/timer/TimerCard';
 import { semantic } from '../../src/constants/colors';
 import { layout, spacing } from '../../src/constants/spacing';
 import { typography } from '../../src/constants/typography';
 import { TimerTemplate } from '../../src/types';
+
+const FREE_TIMER_LIMIT = 3;
 
 function getTimeGreeting(): { emoji: string; key: string } {
   const h = new Date().getHours();
@@ -30,11 +33,21 @@ export default function HomeScreen() {
   const incrementUsage = useTemplateStore(s => s.incrementUsage);
   const deleteTemplate = useTemplateStore(s => s.deleteTemplate);
   const start = useTimerStore(s => s.start);
+  const isPremium = usePreferencesStore(s => s.isPremium);
 
   const presets = templates.filter(t => t.type === 'preset');
   const customs = templates.filter(t => t.type === 'custom');
 
   const greeting = useMemo(() => getTimeGreeting(), []);
+  const atLimit = !isPremium && customs.length >= FREE_TIMER_LIMIT;
+
+  function handleNewTimer() {
+    if (atLimit) {
+      router.push('/paywall');
+    } else {
+      router.push('/timer/editor');
+    }
+  }
 
   function handleStartTimer(template: TimerTemplate) {
     incrementUsage(template.id);
@@ -82,10 +95,13 @@ export default function HomeScreen() {
             </View>
 
             <Pressable
-              onPress={() => router.push('/timer/editor')}
-              style={[styles.addBtn, { backgroundColor: semantic.accent }]}
+              onPress={handleNewTimer}
+              style={[styles.addBtn, { backgroundColor: atLimit ? semantic.premium : semantic.accent }]}
             >
-              <Plus size={22} color="#FFFFFF" strokeWidth={2.5} />
+              {atLimit
+                ? <Lock size={20} color="#FFFFFF" strokeWidth={2.5} />
+                : <Plus size={22} color="#FFFFFF" strokeWidth={2.5} />
+              }
             </Pressable>
           </View>
         </View>
@@ -118,14 +134,27 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>
               {t('home.myTimers')}
             </Text>
+
+            {/* Free limit counter */}
+            {!isPremium && (
+              <Text style={[styles.limitBadge, { color: atLimit ? semantic.warning : colors.textTertiary }]}>
+                {customs.length}/{FREE_TIMER_LIMIT}
+              </Text>
+            )}
+
             {customs.length > 0 && (
               <Pressable
-                onPress={() => router.push('/timer/editor')}
-                style={[styles.sectionAddBtn, { backgroundColor: semantic.accent + '18' }]}
+                onPress={handleNewTimer}
+                style={[styles.sectionAddBtn, {
+                  backgroundColor: atLimit ? semantic.premium + '18' : semantic.accent + '18',
+                }]}
               >
-                <Plus size={14} color={semantic.accent} strokeWidth={2.5} />
-                <Text style={[styles.sectionAddText, { color: semantic.accent }]}>
-                  {t('common.new', { defaultValue: 'New' })}
+                {atLimit
+                  ? <Lock size={12} color={semantic.premium} strokeWidth={2.5} />
+                  : <Plus size={14} color={semantic.accent} strokeWidth={2.5} />
+                }
+                <Text style={[styles.sectionAddText, { color: atLimit ? semantic.premium : semantic.accent }]}>
+                  {atLimit ? 'Pro' : t('common.new', { defaultValue: 'New' })}
                 </Text>
               </Pressable>
             )}
@@ -143,7 +172,7 @@ export default function HomeScreen() {
               ))
             : (
               <Pressable
-                onPress={() => router.push('/timer/editor')}
+                onPress={handleNewTimer}
                 style={[styles.emptyCard, {
                   borderColor: semantic.accent + '40',
                   backgroundColor: semantic.accent + '08',
@@ -237,6 +266,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...typography.label,
     flex: 1,
+  },
+  limitBadge: {
+    ...typography.caption,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+    marginRight: spacing.xs,
   },
   sectionAddBtn: {
     flexDirection: 'row',

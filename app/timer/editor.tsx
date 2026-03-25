@@ -10,6 +10,8 @@ import { useTheme } from '../../src/hooks/useTheme';
 import { useTemplateStore } from '../../src/stores/templateStore';
 import { useTimerStore } from '../../src/stores/timerStore';
 import { usePreferencesStore } from '../../src/stores/preferencesStore';
+
+const FREE_TIMER_LIMIT = 3;
 import { semantic } from '../../src/constants/colors';
 import { layout, spacing } from '../../src/constants/spacing';
 import { typography } from '../../src/constants/typography';
@@ -118,10 +120,15 @@ export default function EditorScreen() {
   const start = useTimerStore(s => s.start);
   const defaultPrepare = usePreferencesStore(s => s.defaultPrepareSeconds);
   const defaultCooldown = usePreferencesStore(s => s.defaultCooldownSeconds);
+  const isPremium = usePreferencesStore(s => s.isPremium);
 
   const existing = id ? templates.find(t => t.id === id) : null;
   const isReadOnly = readonly === '1';
   const isEditing = !!existing && !isReadOnly;
+
+  const customCount = templates.filter(t => t.type === 'custom').length;
+  // Limit applies only when creating a NEW custom timer (not editing existing)
+  const wouldExceedLimit = !isEditing && !isPremium && customCount >= FREE_TIMER_LIMIT;
 
   const [name, setName] = useState(existing?.name ?? '');
   const [workSeconds, setWorkSeconds] = useState(existing?.workSeconds ?? 20);
@@ -169,6 +176,10 @@ export default function EditorScreen() {
   }
 
   function handleSave() {
+    if (wouldExceedLimit) {
+      router.push('/paywall');
+      return;
+    }
     const error = validate();
     if (error) {
       Alert.alert(t('common.ok'), error);
@@ -184,6 +195,10 @@ export default function EditorScreen() {
   }
 
   function handleStartNow() {
+    if (wouldExceedLimit) {
+      router.push('/paywall');
+      return;
+    }
     const error = validate();
     if (error) {
       Alert.alert(t('common.ok'), error);
