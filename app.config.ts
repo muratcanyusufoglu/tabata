@@ -40,6 +40,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     favicon: './assets/images/favicon.png',
   },
   plugins: [
+    'expo-dev-client',
     'expo-router',
     'expo-sqlite',
     [
@@ -57,7 +58,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     'expo-localization',
-    'react-native-purchases',
   ],
   experiments: {
     typedRoutes: true,
