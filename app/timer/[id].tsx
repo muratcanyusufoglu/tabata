@@ -194,8 +194,10 @@ export default function TimerScreen() {
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
         {/* Close button */}
         <View style={styles.topBar}>
-          <Pressable onPress={handleStop} style={styles.closeBtn}>
-            <X size={24} color="rgba(255,255,255,0.8)" />
+          <Pressable onPress={handleStop} style={styles.closeBtn} hitSlop={12}>
+            <View style={styles.closeBtnBg}>
+              <X size={20} color="rgba(255,255,255,0.95)" strokeWidth={2.5} />
+            </View>
           </Pressable>
           <Text style={styles.templateName} numberOfLines={1}>{template.name}</Text>
           <View style={styles.closeBtn} />
@@ -283,13 +285,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: layout.screenPadding,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   closeBtn: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  closeBtnBg: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
   templateName: {
     flex: 1,

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Pressable, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { Plus, Dumbbell } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useTemplateStore } from '../../src/stores/templateStore';
@@ -15,9 +16,16 @@ import { layout, spacing } from '../../src/constants/spacing';
 import { typography } from '../../src/constants/typography';
 import { TimerTemplate } from '../../src/types';
 
+function getTimeGreeting(): { emoji: string; key: string } {
+  const h = new Date().getHours();
+  if (h < 12) return { emoji: '🌅', key: 'home.greetingMorning' };
+  if (h < 17) return { emoji: '⚡', key: 'home.greetingAfternoon' };
+  return { emoji: '🔥', key: 'home.greetingEvening' };
+}
+
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const templates = useTemplateStore(s => s.templates);
   const incrementUsage = useTemplateStore(s => s.incrementUsage);
   const deleteTemplate = useTemplateStore(s => s.deleteTemplate);
@@ -25,6 +33,8 @@ export default function HomeScreen() {
 
   const presets = templates.filter(t => t.type === 'preset');
   const customs = templates.filter(t => t.type === 'custom');
+
+  const greeting = useMemo(() => getTimeGreeting(), []);
 
   function handleStartTimer(template: TimerTemplate) {
     incrementUsage(template.id);
@@ -46,18 +56,52 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <View style={styles.header}>
-          <Text style={[styles.greeting, { color: colors.text }]}>{t('home.greeting')}</Text>
-          <Pressable
-            onPress={() => router.push('/timer/editor')}
-            style={[styles.addBtn, { backgroundColor: semantic.accent }]}
-          >
-            <Plus size={22} color="#FFFFFF" />
-          </Pressable>
+
+        {/* ── Header ── */}
+        <View style={styles.headerWrap}>
+          {/* Gradient strip behind header */}
+          <LinearGradient
+            colors={isDark
+              ? ['rgba(0,122,255,0.12)', 'rgba(0,122,255,0)']
+              : ['rgba(0,122,255,0.07)', 'rgba(0,122,255,0)']}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
+
+          <View style={styles.headerRow}>
+            <View style={styles.headerLeft}>
+              <Text style={[styles.greetingEmoji]}>{greeting.emoji}</Text>
+              <View>
+                <Text style={[styles.greetingTitle, { color: colors.text }]}>
+                  {t('home.greeting')}
+                </Text>
+                <Text style={[styles.greetingSub, { color: colors.textTertiary }]}>
+                  {t('home.readySub', { defaultValue: 'Pick a timer and go!' })}
+                </Text>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={() => router.push('/timer/editor')}
+              style={[styles.addBtn, { backgroundColor: semantic.accent }]}
+            >
+              <Plus size={22} color="#FFFFFF" strokeWidth={2.5} />
+            </Pressable>
+          </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>{t('home.quickStart')}</Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Quick Start section */}
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionDot, { backgroundColor: semantic.accent }]} />
+            <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>
+              {t('home.quickStart')}
+            </Text>
+          </View>
+
           {presets.map((template, index) => (
             <TimerCard
               key={template.id}
@@ -68,7 +112,25 @@ export default function HomeScreen() {
             />
           ))}
 
-          <Text style={[styles.sectionTitle, { color: colors.textTertiary, marginTop: spacing.xxl }]}>{t('home.myTimers')}</Text>
+          {/* My Timers section */}
+          <View style={[styles.sectionHeader, { marginTop: spacing.xl }]}>
+            <View style={[styles.sectionDot, { backgroundColor: semantic.success }]} />
+            <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>
+              {t('home.myTimers')}
+            </Text>
+            {customs.length > 0 && (
+              <Pressable
+                onPress={() => router.push('/timer/editor')}
+                style={[styles.sectionAddBtn, { backgroundColor: semantic.accent + '18' }]}
+              >
+                <Plus size={14} color={semantic.accent} strokeWidth={2.5} />
+                <Text style={[styles.sectionAddText, { color: semantic.accent }]}>
+                  {t('common.new', { defaultValue: 'New' })}
+                </Text>
+              </Pressable>
+            )}
+          </View>
+
           {customs.length > 0
             ? customs.map((template, index) => (
                 <TimerCard
@@ -82,10 +144,20 @@ export default function HomeScreen() {
             : (
               <Pressable
                 onPress={() => router.push('/timer/editor')}
-                style={[styles.emptyCard, { borderColor: colors.border, backgroundColor: colors.backgroundPrimary }]}
+                style={[styles.emptyCard, {
+                  borderColor: semantic.accent + '40',
+                  backgroundColor: semantic.accent + '08',
+                }]}
               >
-                <Plus size={24} color={semantic.accent} />
-                <Text style={[styles.emptyText, { color: colors.textTertiary }]}>{t('home.createFirst')}</Text>
+                <View style={[styles.emptyIcon, { backgroundColor: semantic.accent + '18' }]}>
+                  <Dumbbell size={24} color={semantic.accent} />
+                </View>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                  {t('home.createFirst')}
+                </Text>
+                <Text style={[styles.emptyHint, { color: colors.textTertiary }]}>
+                  {t('home.createHint', { defaultValue: 'Tap to build your custom timer' })}
+                </Text>
               </Pressable>
             )
           }
@@ -100,30 +172,86 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
-  header: {
+
+  /* Header */
+  headerWrap: {
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
+    overflow: 'hidden',
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: layout.screenPadding,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
   },
-  greeting: { ...typography.h2 },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flex: 1,
+  },
+  greetingEmoji: {
+    fontSize: 32,
+    lineHeight: 38,
+  },
+  greetingTitle: {
+    ...typography.h2,
+    fontWeight: '700',
+  },
+  greetingSub: {
+    ...typography.caption,
+    marginTop: 1,
+  },
   addBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: semantic.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
   },
+
+  /* Scroll */
   scrollContent: {
     paddingHorizontal: layout.screenPadding,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xs,
+  },
+
+  /* Section header */
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  sectionDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   sectionTitle: {
     ...typography.label,
-    marginBottom: spacing.md,
+    flex: 1,
   },
+  sectionAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: layout.pillRadius,
+  },
+  sectionAddText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  /* Empty state */
   emptyCard: {
     borderWidth: 1.5,
     borderStyle: 'dashed',
@@ -132,7 +260,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    marginTop: spacing.md,
   },
-  emptyText: { ...typography.body },
+  emptyIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  emptyTitle: {
+    ...typography.body,
+    fontWeight: '600',
+  },
+  emptyHint: {
+    ...typography.caption,
+    textAlign: 'center',
+  },
 });

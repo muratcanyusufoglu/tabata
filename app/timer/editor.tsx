@@ -224,8 +224,10 @@ export default function EditorScreen() {
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.iconBtn}>
-            <X size={24} color={colors.text} />
+          <Pressable onPress={() => router.back()} style={styles.iconBtn} hitSlop={8}>
+            <View style={[styles.iconBtnBg, { backgroundColor: colors.backgroundTertiary }]}>
+              <X size={18} color={colors.text} strokeWidth={2.5} />
+            </View>
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>{screenTitle}</Text>
           {!isReadOnly ? (
@@ -363,6 +365,13 @@ const styles = StyleSheet.create({
   iconBtn: {
     width: 44,
     height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconBtnBg: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
   },

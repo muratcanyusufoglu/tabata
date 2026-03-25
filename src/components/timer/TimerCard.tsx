@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
-import { Play } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Play, Clock } from 'lucide-react-native';
 import { TimerTemplate } from '../../types';
 import { useTheme } from '../../hooks/useTheme';
 import { typography } from '../../constants/typography';
 import { spacing, layout } from '../../constants/spacing';
-import { semantic } from '../../constants/colors';
+import { colorThemes } from '../../constants/colors';
 import { formatDuration } from '../../utils/formatters';
 import { useTranslation } from 'react-i18next';
 
@@ -20,8 +20,8 @@ interface TimerCardProps {
   index?: number;
 }
 
-export function TimerCard({ template, onPress, onStart, index = 0 }: TimerCardProps) {
-  const { isDark, colors, phaseGradient } = useTheme();
+export function TimerCard({ template, onPress, onStart }: TimerCardProps) {
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const scale = useSharedValue(1);
 
@@ -29,8 +29,10 @@ export function TimerCard({ template, onPress, onStart, index = 0 }: TimerCardPr
     transform: [{ scale: scale.value }],
   }));
 
-  const [color1] = phaseGradient('work');
-  const configText = `${template.workSeconds}s ${t('common.seconds', { count: '' }).trim()} · ${template.restSeconds > 0 ? `${template.restSeconds}s · ` : ''}${template.rounds} ${t('format.roundsCount', { count: '' }).trim()}`;
+  const theme =
+    colorThemes.find(c => c.id === (template.colorThemeId ?? 'vivid')) ?? colorThemes[0];
+  const workColor = theme.work[0];
+  const restColor = theme.rest[0];
   const totalText = formatDuration(template.totalDurationSeconds);
 
   return (
@@ -38,92 +40,176 @@ export function TimerCard({ template, onPress, onStart, index = 0 }: TimerCardPr
       onPress={onPress}
       onPressIn={() => { scale.value = withSpring(0.97, { duration: 80 }); }}
       onPressOut={() => { scale.value = withSpring(1, { duration: 100 }); }}
-      style={anim}
+      style={[anim, styles.wrapper]}
     >
-      <BlurView
-        intensity={isDark ? 60 : 80}
-        tint={isDark ? 'dark' : 'light'}
-        style={[styles.blur, { borderColor: colors.glassBorder }]}
-      >
-        <View style={[styles.inner, { backgroundColor: colors.glass }]}>
-          <View style={styles.header}>
-            <View style={[styles.dot, { backgroundColor: color1 }]} />
-            <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
-              {template.name}
-            </Text>
-          </View>
-          <Text style={[styles.config, { color: colors.textTertiary }]} numberOfLines={1}>
-            {`${template.workSeconds}s ${t('timer.work').toLowerCase()} · ${template.rounds} ${t('history.workouts', { count: '' }).trim()}`}
+      <View style={[styles.card, { backgroundColor: colors.backgroundPrimary, borderColor: colors.border }]}>
+
+        {/* Left gradient accent bar */}
+        <LinearGradient
+          colors={theme.work}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.accentBar}
+        />
+
+        <View style={styles.content}>
+          {/* Name */}
+          <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
+            {template.name}
           </Text>
-          <View style={styles.footer}>
-            <Text style={[styles.duration, { color: colors.textSecondary }]}>
-              {totalText} {t('format.totalTime', { time: '' }).replace('{{time}}', '').trim()}
-            </Text>
-            <Pressable onPress={onStart} style={styles.startBtn}>
-              <View style={[styles.startBtnInner, { backgroundColor: semantic.accent }]}>
-                <Play size={14} color="#FFFFFF" fill="#FFFFFF" />
-                <Text style={styles.startText}>{t('timer.start')}</Text>
+
+          {/* Stats chips */}
+          <View style={styles.chips}>
+            {/* Work chip */}
+            <View style={[styles.chip, { backgroundColor: workColor + '1A' }]}>
+              <Text style={[styles.chipVal, { color: workColor }]}>
+                {template.workSeconds}s
+              </Text>
+              <Text style={[styles.chipLbl, { color: workColor + 'BB' }]}>
+                {t('timer.work').toUpperCase()}
+              </Text>
+            </View>
+
+            {/* Rest chip */}
+            {template.restSeconds > 0 && (
+              <View style={[styles.chip, { backgroundColor: restColor + '1A' }]}>
+                <Text style={[styles.chipVal, { color: restColor }]}>
+                  {template.restSeconds}s
+                </Text>
+                <Text style={[styles.chipLbl, { color: restColor + 'BB' }]}>
+                  {t('timer.rest').toUpperCase()}
+                </Text>
               </View>
+            )}
+
+            {/* Rounds chip */}
+            <View style={[styles.chip, { backgroundColor: colors.backgroundTertiary }]}>
+              <Text style={[styles.chipVal, { color: colors.textSecondary }]}>
+                {template.rounds}×
+              </Text>
+              <Text style={[styles.chipLbl, { color: colors.textTertiary }]}>
+                {t('editor.rounds').toUpperCase()}
+              </Text>
+            </View>
+
+            {/* Sets chip (only if > 1) */}
+            {template.sets > 1 && (
+              <View style={[styles.chip, { backgroundColor: colors.backgroundTertiary }]}>
+                <Text style={[styles.chipVal, { color: colors.textSecondary }]}>
+                  {template.sets}
+                </Text>
+                <Text style={[styles.chipLbl, { color: colors.textTertiary }]}>
+                  SETS
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Footer: duration + start */}
+          <View style={styles.footer}>
+            <View style={styles.durationRow}>
+              <Clock size={12} color={colors.textTertiary} />
+              <Text style={[styles.duration, { color: colors.textTertiary }]}>
+                {totalText} {t('format.totalTime', { time: '' }).replace('{{time}}', '').trim()}
+              </Text>
+            </View>
+
+            <Pressable onPress={onStart} hitSlop={8}>
+              <LinearGradient
+                colors={theme.work}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.startBtn}
+              >
+                <Play size={12} color="#FFF" fill="#FFF" />
+                <Text style={styles.startText}>{t('timer.start')}</Text>
+              </LinearGradient>
             </Pressable>
           </View>
         </View>
-      </BlurView>
+      </View>
     </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
-  blur: {
-    borderRadius: layout.glassCardRadius,
-    overflow: 'hidden',
-    borderWidth: 0.5,
+  wrapper: {
     marginBottom: spacing.md,
   },
-  inner: {
-    padding: layout.cardPadding,
-    gap: spacing.sm,
-  },
-  header: {
+  card: {
+    borderRadius: layout.cardRadius,
+    borderWidth: 1,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+    overflow: 'hidden',
+    // Subtle shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  accentBar: {
+    width: 5,
+  },
+  content: {
+    flex: 1,
+    padding: layout.cardPadding,
+    gap: spacing.md,
   },
   name: {
-    ...typography.h3,
-    flex: 1,
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
-  config: {
-    ...typography.bodySmall,
+  chips: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    flexWrap: 'wrap',
+  },
+  chip: {
+    borderRadius: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    alignItems: 'center',
+    minWidth: 58,
+  },
+  chipVal: {
+    fontSize: 16,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+    lineHeight: 20,
+  },
+  chipLbl: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    lineHeight: 13,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.xs,
+  },
+  durationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   duration: {
     ...typography.caption,
   },
   startBtn: {
-    borderRadius: layout.pillRadius,
-    overflow: 'hidden',
-  },
-  startBtnInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 2,
     borderRadius: layout.pillRadius,
   },
   startText: {
-    ...typography.caption,
-    color: '#FFFFFF',
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFF',
+    letterSpacing: 0.2,
   },
 });
