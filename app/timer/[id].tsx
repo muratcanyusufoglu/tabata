@@ -2,6 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Alert, Pressable, Platform, PanResponder,
 } from 'react-native';
+import Animated, {
+  useSharedValue, withTiming, Easing, cancelAnimation, useAnimatedStyle,
+} from 'react-native-reanimated';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
@@ -143,6 +146,33 @@ export default function TimerScreen() {
   const gradient = phaseGradient(currentPhase);
   const fontSize = typography.timerCountdown.sizes[timerFontSize] ?? typography.timerCountdown.sizes.normal;
 
+  // ── Smooth linear progress bar animation ────────────────────────────────
+  const animBarProgress = useSharedValue(progress);
+  const barPhaseRef = useRef(currentPhase);
+  const barSecondsRef = useRef(secondsRemaining);
+
+  useEffect(() => {
+    const phaseChanged = currentPhase !== barPhaseRef.current;
+    const timerReset  = secondsRemaining > barSecondsRef.current + 1;
+
+    if (phaseChanged || timerReset) {
+      cancelAnimation(animBarProgress);
+      animBarProgress.value = progress;          // instant snap on phase change
+    } else {
+      animBarProgress.value = withTiming(progress, {
+        duration: 1050,
+        easing: Easing.linear,
+      });
+    }
+    barPhaseRef.current   = currentPhase;
+    barSecondsRef.current = secondsRemaining;
+  }, [secondsRemaining, currentPhase]);
+
+  const progressBarStyle = useAnimatedStyle(() => ({
+    width: `${animBarProgress.value * 100}%` as unknown as number,
+  }));
+  // ────────────────────────────────────────────────────────────────────────
+
   function handleStop() {
     Alert.alert(
       t('timer.stopConfirmTitle'),
@@ -186,11 +216,6 @@ export default function TimerScreen() {
     <View style={styles.container} {...panResponder.current.panHandlers}>
       <AnimatedGradientBg phase={currentPhase} customGradient={gradient} />
 
-      {/* Progress bar */}
-      <View style={styles.progressBarContainer}>
-        <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
-      </View>
-
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
         {/* Close button */}
         <View style={styles.topBar}>
@@ -201,6 +226,11 @@ export default function TimerScreen() {
           </Pressable>
           <Text style={styles.templateName} numberOfLines={1}>{template.name}</Text>
           <View style={styles.closeBtn} />
+        </View>
+
+        {/* Progress bar — safe area altında, topBar'ın hemen altında */}
+        <View style={styles.progressBarContainer}>
+          <Animated.View style={[styles.progressBarFill, progressBarStyle]} />
         </View>
 
         {/* Round/Set info */}
@@ -223,6 +253,8 @@ export default function TimerScreen() {
           <View style={styles.ringContainer}>
             <CircularProgress
               progress={progress}
+              secondsRemaining={secondsRemaining}
+              phase={currentPhase}
               timeDisplay={formatTime(secondsRemaining)}
               fontSize={fontSize}
               color="rgba(255,255,255,0.9)"
@@ -267,13 +299,9 @@ export default function TimerScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   progressBarContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
     height: 3,
-    zIndex: 10,
     overflow: 'hidden',
+    marginHorizontal: 0,
   },
   progressBarFill: {
     height: 3,
