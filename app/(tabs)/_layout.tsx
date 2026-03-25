@@ -80,6 +80,8 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} Icon={Settings} />,
         }}
       />
+      {/* explore.tsx silindi — Expo Router artık bu sayfayı keşfetmesin */}
+      <Tabs.Screen name="explore" options={{ href: null }} />
     </Tabs>
   );
 }
