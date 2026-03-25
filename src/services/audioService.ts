@@ -47,7 +47,8 @@ export async function play(key: string, volume = 0.8): Promise<void> {
   const sound = soundCache.get(key);
   if (!sound) return;
   try {
-    await sound.setVolumeAsync(volume);
+    const safeVolume = Math.max(0, Math.min(1, isNaN(volume) ? 0.8 : volume));
+    await sound.setVolumeAsync(safeVolume);
     await sound.setPositionAsync(0);
     await sound.playAsync();
   } catch (e) {

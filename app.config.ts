@@ -57,6 +57,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     'expo-localization',
+    'react-native-purchases',
   ],
   experiments: {
     typedRoutes: true,

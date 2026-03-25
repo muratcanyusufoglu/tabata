@@ -9,6 +9,7 @@ import { usePreferencesStore } from '../src/stores/preferencesStore';
 import { useTemplateStore } from '../src/stores/templateStore';
 import { useTimerStore } from '../src/stores/timerStore';
 import { configureAudioSession } from '../src/services/audioService';
+import { initializePurchases, checkCustomerInfo } from '../src/services/purchaseService';
 import { startInterval, stopInterval } from '../src/services/timerService';
 import { setToastCallback } from '../src/utils/errorHandler';
 import { Toast } from '../src/components/ui/Toast';
@@ -29,13 +30,19 @@ export default function RootLayout() {
     seedPresets();
     incrementAppOpenCount();
     getDatabase().catch(console.error);
+    initializePurchases().then(() => {
+      checkCustomerInfo().then(isPremium => {
+        if (isPremium) usePreferencesStore.getState().setIsPremium(true);
+      });
+    });
 
     setToastCallback((msg) => setToast(msg));
 
     // AppState listener for background recalculation
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
-        if (useTimerStore.getState().status === 'running') {
+        const ts = useTimerStore.getState();
+        if (ts.status === 'running' && ts.template) {
           recalculate();
           startInterval();
         }

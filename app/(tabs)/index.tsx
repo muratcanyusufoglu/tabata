@@ -1,98 +1,138 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import React from 'react';
+import {
+  View, Text, ScrollView, StyleSheet, Pressable, Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { Plus } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '../../src/hooks/useTheme';
+import { useTemplateStore } from '../../src/stores/templateStore';
+import { useTimerStore } from '../../src/stores/timerStore';
+import { TimerCard } from '../../src/components/timer/TimerCard';
+import { semantic } from '../../src/constants/colors';
+import { layout, spacing } from '../../src/constants/spacing';
+import { typography } from '../../src/constants/typography';
+import { TimerTemplate } from '../../src/types';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const templates = useTemplateStore(s => s.templates);
+  const incrementUsage = useTemplateStore(s => s.incrementUsage);
+  const deleteTemplate = useTemplateStore(s => s.deleteTemplate);
+  const start = useTimerStore(s => s.start);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const presets = templates.filter(t => t.type === 'preset');
+  const customs = templates.filter(t => t.type === 'custom');
+
+  function handleStartTimer(template: TimerTemplate) {
+    incrementUsage(template.id);
+    start(template);
+    router.push(`/timer/${template.id}`);
+  }
+
+  function handleDeleteTemplate(template: TimerTemplate) {
+    Alert.alert(
+      t('editor.delete'),
+      t('editor.deleteConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => deleteTemplate(template.id) },
+      ]
+    );
+  }
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={['top']} style={styles.safeArea}>
+        <View style={styles.header}>
+          <Text style={[styles.greeting, { color: colors.text }]}>{t('home.greeting')}</Text>
+          <Pressable
+            onPress={() => router.push('/timer/editor')}
+            style={[styles.addBtn, { backgroundColor: semantic.accent }]}
+          >
+            <Plus size={22} color="#FFFFFF" />
+          </Pressable>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>{t('home.quickStart')}</Text>
+          {presets.map((template, index) => (
+            <TimerCard
+              key={template.id}
+              template={template}
+              index={index}
+              onPress={() => router.push(`/timer/editor?id=${template.id}&readonly=1`)}
+              onStart={() => handleStartTimer(template)}
+            />
+          ))}
+
+          <Text style={[styles.sectionTitle, { color: colors.textTertiary, marginTop: spacing.xxl }]}>{t('home.myTimers')}</Text>
+          {customs.length > 0
+            ? customs.map((template, index) => (
+                <TimerCard
+                  key={template.id}
+                  template={template}
+                  index={index}
+                  onPress={() => router.push(`/timer/editor?id=${template.id}`)}
+                  onStart={() => handleStartTimer(template)}
+                />
+              ))
+            : (
+              <Pressable
+                onPress={() => router.push('/timer/editor')}
+                style={[styles.emptyCard, { borderColor: colors.border, backgroundColor: colors.backgroundPrimary }]}
+              >
+                <Plus size={24} color={semantic.accent} />
+                <Text style={[styles.emptyText, { color: colors.textTertiary }]}>{t('home.createFirst')}</Text>
+              </Pressable>
+            )
+          }
+
+          <View style={{ height: layout.tabBarHeight + spacing.xxl }} />
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  greeting: { ...typography.h2 },
+  addBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  scrollContent: {
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: spacing.lg,
   },
+  sectionTitle: {
+    ...typography.label,
+    marginBottom: spacing.md,
+  },
+  emptyCard: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderRadius: layout.cardRadius,
+    padding: spacing.xxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  emptyText: { ...typography.body },
 });

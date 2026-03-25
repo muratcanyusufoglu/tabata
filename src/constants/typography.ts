@@ -1,7 +1,7 @@
 export const typography = {
   timerCountdown: {
     fontFamily: 'System' as const,
-    fontVariant: ['tabular-nums'] as const,
+    fontVariant: ['tabular-nums'] as ('tabular-nums')[],
     fontWeight: '200' as const,
     letterSpacing: -3,
     sizes: {
@@ -25,6 +25,6 @@ export const typography = {
   caption: { fontSize: 13, fontWeight: '400' as const, lineHeight: 18 },
   label: { fontSize: 12, fontWeight: '600' as const, letterSpacing: 0.8, textTransform: 'uppercase' as const },
   badge: { fontSize: 11, fontWeight: '700' as const, letterSpacing: 0.3 },
-  statNumber: { fontSize: 28, fontWeight: '700' as const, fontVariant: ['tabular-nums'] as const },
+  statNumber: { fontSize: 28, fontWeight: '700' as const, fontVariant: ['tabular-nums'] as ('tabular-nums')[] },
   statLabel: { fontSize: 12, fontWeight: '500' as const, letterSpacing: 0.5, textTransform: 'uppercase' as const },
 };

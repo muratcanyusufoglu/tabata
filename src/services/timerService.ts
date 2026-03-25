@@ -16,12 +16,14 @@ export function startInterval(): void {
 
       useTimerStore.getState().tick();
 
+      // Resync expected tick on large drift instead of restarting the interval
+      // (restarting inside the callback creates a recursive stop/start loop)
       if (Math.abs(drift) > 200) {
-        stopInterval();
-        startInterval();
+        nextExpectedTick = Date.now() + 1000;
       }
     } catch (e) {
       handleError('timer_interval_fail', e);
+      // Only restart on error, not on drift
       stopInterval();
       startInterval();
     }

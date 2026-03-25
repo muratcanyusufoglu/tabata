@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Text, ViewStyle, TextStyle, StyleSheet } from 'react-native';
+import { Pressable, Text, View, ViewStyle, TextStyle, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useTheme } from '../../hooks/useTheme';
