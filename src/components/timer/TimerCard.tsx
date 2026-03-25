@@ -1,11 +1,9 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Play, Clock } from 'lucide-react-native';
+import { Play } from 'lucide-react-native';
 import { TimerTemplate } from '../../types';
 import { useTheme } from '../../hooks/useTheme';
-import { typography } from '../../constants/typography';
 import { spacing, layout } from '../../constants/spacing';
 import { colorThemes } from '../../constants/colors';
 import { formatDuration } from '../../utils/formatters';
@@ -21,7 +19,7 @@ interface TimerCardProps {
 }
 
 export function TimerCard({ template, onPress, onStart }: TimerCardProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { t } = useTranslation();
   const scale = useSharedValue(1);
 
@@ -31,9 +29,13 @@ export function TimerCard({ template, onPress, onStart }: TimerCardProps) {
 
   const theme =
     colorThemes.find(c => c.id === (template.colorThemeId ?? 'vivid')) ?? colorThemes[0];
-  const workColor = theme.work[0];
+  const accentColor = theme.work[0];
   const restColor = theme.rest[0];
   const totalText = formatDuration(template.totalDurationSeconds);
+
+  const cardBg = isDark ? '#161616' : '#F5F5F5';
+  const statsBg = isDark ? '#1E1E1E' : '#EBEBEB';
+  const dividerColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
 
   return (
     <AnimatedPressable
@@ -42,88 +44,83 @@ export function TimerCard({ template, onPress, onStart }: TimerCardProps) {
       onPressOut={() => { scale.value = withSpring(1, { duration: 100 }); }}
       style={[anim, styles.wrapper]}
     >
-      <View style={[styles.card, { backgroundColor: colors.backgroundPrimary, borderColor: colors.border }]}>
+      <View style={[styles.card, { backgroundColor: cardBg }]}>
 
-        {/* Left gradient accent bar */}
-        <LinearGradient
-          colors={theme.work}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.accentBar}
-        />
+        {/* Left accent border */}
+        <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
 
-        <View style={styles.content}>
-          {/* Name */}
-          <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
-            {template.name}
+        <View style={styles.inner}>
+
+          {/* Timer name — bold italic uppercase */}
+          <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
+            {template.name.toUpperCase()}
           </Text>
 
-          {/* Stats chips */}
-          <View style={styles.chips}>
-            {/* Work chip */}
-            <View style={[styles.chip, { backgroundColor: workColor + '1A' }]}>
-              <Text style={[styles.chipVal, { color: workColor }]}>
-                {template.workSeconds}s
+          {/* Stats row */}
+          <View style={[styles.statsRow, { backgroundColor: statsBg }]}>
+
+            {/* WORK */}
+            <View style={styles.statCell}>
+              <Text style={[styles.statValue, { color: accentColor }]}>
+                {template.workSeconds}
               </Text>
-              <Text style={[styles.chipLbl, { color: workColor + 'BB' }]}>
+              <Text style={[styles.statUnit, { color: colors.textTertiary }]}>
                 {t('timer.work').toUpperCase()}
               </Text>
             </View>
 
-            {/* Rest chip */}
-            {template.restSeconds > 0 && (
-              <View style={[styles.chip, { backgroundColor: restColor + '1A' }]}>
-                <Text style={[styles.chipVal, { color: restColor }]}>
-                  {template.restSeconds}s
-                </Text>
-                <Text style={[styles.chipLbl, { color: restColor + 'BB' }]}>
-                  {t('timer.rest').toUpperCase()}
-                </Text>
-              </View>
-            )}
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
 
-            {/* Rounds chip */}
-            <View style={[styles.chip, { backgroundColor: colors.backgroundTertiary }]}>
-              <Text style={[styles.chipVal, { color: colors.textSecondary }]}>
-                {template.rounds}×
+            {/* REST */}
+            <View style={styles.statCell}>
+              <Text style={[styles.statValue, { color: restColor }]}>
+                {template.restSeconds}
               </Text>
-              <Text style={[styles.chipLbl, { color: colors.textTertiary }]}>
+              <Text style={[styles.statUnit, { color: colors.textTertiary }]}>
+                {t('timer.rest').toUpperCase()}
+              </Text>
+            </View>
+
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
+
+            {/* ROUNDS */}
+            <View style={styles.statCell}>
+              <Text style={[styles.statValue, { color: colors.textSecondary }]}>
+                {template.rounds}
+              </Text>
+              <Text style={[styles.statUnit, { color: colors.textTertiary }]}>
                 {t('editor.rounds').toUpperCase()}
               </Text>
             </View>
 
-            {/* Sets chip (only if > 1) */}
+            {/* SETS (only if > 1) */}
             {template.sets > 1 && (
-              <View style={[styles.chip, { backgroundColor: colors.backgroundTertiary }]}>
-                <Text style={[styles.chipVal, { color: colors.textSecondary }]}>
-                  {template.sets}
-                </Text>
-                <Text style={[styles.chipLbl, { color: colors.textTertiary }]}>
-                  SETS
-                </Text>
-              </View>
+              <>
+                <View style={[styles.divider, { backgroundColor: dividerColor }]} />
+                <View style={styles.statCell}>
+                  <Text style={[styles.statValue, { color: colors.textSecondary }]}>
+                    {template.sets}
+                  </Text>
+                  <Text style={[styles.statUnit, { color: colors.textTertiary }]}>
+                    SETS
+                  </Text>
+                </View>
+              </>
             )}
           </View>
 
-          {/* Footer: duration + start */}
+          {/* Footer: total duration + play button */}
           <View style={styles.footer}>
-            <View style={styles.durationRow}>
-              <Clock size={12} color={colors.textTertiary} />
-              <Text style={[styles.duration, { color: colors.textTertiary }]}>
-                {totalText} {t('format.totalTime', { time: '' }).replace('{{time}}', '').trim()}
-              </Text>
-            </View>
+            <Text style={[styles.duration, { color: colors.textTertiary }]}>
+              {totalText}
+            </Text>
 
-            <Pressable onPress={onStart} hitSlop={8}>
-              <LinearGradient
-                colors={theme.work}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.startBtn}
-              >
-                <Play size={12} color="#FFF" fill="#FFF" />
-                <Text style={styles.startText}>{t('timer.start')}</Text>
-              </LinearGradient>
+            <Pressable
+              onPress={onStart}
+              hitSlop={8}
+              style={[styles.playBtn, { backgroundColor: accentColor }]}
+            >
+              <Play size={18} color="#000" fill="#000" strokeWidth={0} />
             </Pressable>
           </View>
         </View>
@@ -138,78 +135,79 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: layout.cardRadius,
-    borderWidth: 1,
     flexDirection: 'row',
     overflow: 'hidden',
-    // Subtle shadow
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
   },
   accentBar: {
     width: 5,
   },
-  content: {
+  inner: {
     flex: 1,
     padding: layout.cardPadding,
     gap: spacing.md,
   },
   name: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: -0.3,
+    fontSize: 22,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: -0.8,
+    lineHeight: 26,
   },
-  chips: {
+  statsRow: {
     flexDirection: 'row',
-    gap: spacing.xs,
-    flexWrap: 'wrap',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
-  chip: {
-    borderRadius: 10,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
+  statCell: {
+    flex: 1,
     alignItems: 'center',
-    minWidth: 58,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
+    gap: 2,
   },
-  chipVal: {
-    fontSize: 16,
-    fontWeight: '700',
+  statValue: {
+    fontSize: 28,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: -1,
+    lineHeight: 32,
     fontVariant: ['tabular-nums'],
-    lineHeight: 20,
   },
-  chipLbl: {
+  statUnit: {
     fontSize: 9,
     fontWeight: '700',
-    letterSpacing: 0.6,
-    lineHeight: 13,
+    letterSpacing: 0.8,
+    lineHeight: 12,
+  },
+  divider: {
+    width: 1,
+    marginVertical: spacing.sm,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  durationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
   duration: {
-    ...typography.caption,
-  },
-  startBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: layout.pillRadius,
-  },
-  startText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
     letterSpacing: 0.2,
+  },
+  playBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
 });

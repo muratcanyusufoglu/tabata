@@ -3,9 +3,8 @@ import {
   View, Text, ScrollView, StyleSheet, Pressable, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Plus, Dumbbell, Lock } from 'lucide-react-native';
+import { Plus, Lock } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/hooks/useTheme';
 import { useTemplateStore } from '../../src/stores/templateStore';
@@ -14,16 +13,15 @@ import { usePreferencesStore } from '../../src/stores/preferencesStore';
 import { TimerCard } from '../../src/components/timer/TimerCard';
 import { semantic } from '../../src/constants/colors';
 import { layout, spacing } from '../../src/constants/spacing';
-import { typography } from '../../src/constants/typography';
 import { TimerTemplate } from '../../src/types';
 
 const FREE_TIMER_LIMIT = 3;
 
-function getTimeGreeting(): { emoji: string; key: string } {
+function getTimeGreeting(): { label: string } {
   const h = new Date().getHours();
-  if (h < 12) return { emoji: '🌅', key: 'home.greetingMorning' };
-  if (h < 17) return { emoji: '⚡', key: 'home.greetingAfternoon' };
-  return { emoji: '🔥', key: 'home.greetingEvening' };
+  if (h < 12) return { label: 'GOOD MORNING' };
+  if (h < 17) return { label: 'GOOD AFTERNOON' };
+  return { label: 'GOOD EVENING' };
 }
 
 export default function HomeScreen() {
@@ -40,6 +38,11 @@ export default function HomeScreen() {
 
   const greeting = useMemo(() => getTimeGreeting(), []);
   const atLimit = !isPremium && customs.length >= FREE_TIMER_LIMIT;
+
+  // Subtle surface colors on top of theme background
+  const headerBg = isDark ? '#111111' : '#FFFFFF';
+  const sectionLabelColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
+  const accentColor = semantic.accent;
 
   function handleNewTimer() {
     if (atLimit) {
@@ -71,51 +74,40 @@ export default function HomeScreen() {
       <SafeAreaView edges={['top']} style={styles.safeArea}>
 
         {/* ── Header ── */}
-        <View style={styles.headerWrap}>
-          {/* Gradient strip behind header */}
-          <LinearGradient
-            colors={isDark
-              ? ['rgba(0,122,255,0.12)', 'rgba(0,122,255,0)']
-              : ['rgba(0,122,255,0.07)', 'rgba(0,122,255,0)']}
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none"
-          />
-
-          <View style={styles.headerRow}>
-            <View style={styles.headerLeft}>
-              <Text style={[styles.greetingEmoji]}>{greeting.emoji}</Text>
-              <View>
-                <Text style={[styles.greetingTitle, { color: colors.text }]}>
-                  {t('home.greeting')}
-                </Text>
-                <Text style={[styles.greetingSub, { color: colors.textTertiary }]}>
-                  {t('home.readySub', { defaultValue: 'Pick a timer and go!' })}
-                </Text>
-              </View>
-            </View>
-
-            <Pressable
-              onPress={handleNewTimer}
-              style={[styles.addBtn, { backgroundColor: atLimit ? semantic.premium : semantic.accent }]}
-            >
-              {atLimit
-                ? <Lock size={20} color="#FFFFFF" strokeWidth={2.5} />
-                : <Plus size={22} color="#FFFFFF" strokeWidth={2.5} />
-              }
-            </Pressable>
+        <View style={[styles.header, { backgroundColor: headerBg }]}>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.greetingLabel, { color: sectionLabelColor }]}>
+              {greeting.label}
+            </Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>
+              TABATA
+            </Text>
           </View>
+
+          <Pressable
+            onPress={handleNewTimer}
+            style={[
+              styles.addBtn,
+              { backgroundColor: atLimit ? semantic.premium : accentColor },
+            ]}
+          >
+            {atLimit
+              ? <Lock size={18} color="#FFF" strokeWidth={2.5} />
+              : <Plus size={20} color="#FFF" strokeWidth={2.5} />
+            }
+          </Pressable>
         </View>
 
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Quick Start section */}
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionDot, { backgroundColor: semantic.accent }]} />
-            <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>
-              {t('home.quickStart')}
+          {/* ── Quick Start ── */}
+          <View style={styles.sectionRow}>
+            <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>
+              QUICK START
             </Text>
+            <View style={[styles.sectionLine, { backgroundColor: sectionLabelColor }]} />
           </View>
 
           {presets.map((template, index) => (
@@ -128,16 +120,16 @@ export default function HomeScreen() {
             />
           ))}
 
-          {/* My Timers section */}
-          <View style={[styles.sectionHeader, { marginTop: spacing.xl }]}>
-            <View style={[styles.sectionDot, { backgroundColor: semantic.success }]} />
-            <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>
-              {t('home.myTimers')}
+          {/* ── My Timers ── */}
+          <View style={[styles.sectionRow, { marginTop: spacing.xl }]}>
+            <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>
+              MY TIMERS
             </Text>
 
-            {/* Free limit counter */}
             {!isPremium && (
-              <Text style={[styles.limitBadge, { color: atLimit ? semantic.warning : colors.textTertiary }]}>
+              <Text style={[styles.limitText, {
+                color: atLimit ? semantic.warning : sectionLabelColor,
+              }]}>
                 {customs.length}/{FREE_TIMER_LIMIT}
               </Text>
             )}
@@ -146,18 +138,24 @@ export default function HomeScreen() {
               <Pressable
                 onPress={handleNewTimer}
                 style={[styles.sectionAddBtn, {
-                  backgroundColor: atLimit ? semantic.premium + '18' : semantic.accent + '18',
+                  backgroundColor: atLimit
+                    ? semantic.premium + '22'
+                    : accentColor + '22',
                 }]}
               >
                 {atLimit
-                  ? <Lock size={12} color={semantic.premium} strokeWidth={2.5} />
-                  : <Plus size={14} color={semantic.accent} strokeWidth={2.5} />
+                  ? <Lock size={11} color={semantic.premium} strokeWidth={2.5} />
+                  : <Plus size={13} color={accentColor} strokeWidth={2.5} />
                 }
-                <Text style={[styles.sectionAddText, { color: atLimit ? semantic.premium : semantic.accent }]}>
-                  {atLimit ? 'Pro' : t('common.new', { defaultValue: 'New' })}
+                <Text style={[styles.sectionAddText, {
+                  color: atLimit ? semantic.premium : accentColor,
+                }]}>
+                  {atLimit ? 'PRO' : 'NEW'}
                 </Text>
               </Pressable>
             )}
+
+            <View style={[styles.sectionLine, { backgroundColor: sectionLabelColor }]} />
           </View>
 
           {customs.length > 0
@@ -174,18 +172,18 @@ export default function HomeScreen() {
               <Pressable
                 onPress={handleNewTimer}
                 style={[styles.emptyCard, {
-                  borderColor: semantic.accent + '40',
-                  backgroundColor: semantic.accent + '08',
+                  borderColor: accentColor + '40',
+                  backgroundColor: isDark ? '#161616' : '#F5F5F5',
                 }]}
               >
-                <View style={[styles.emptyIcon, { backgroundColor: semantic.accent + '18' }]}>
-                  <Dumbbell size={24} color={semantic.accent} />
+                <View style={[styles.emptyPlusCircle, { backgroundColor: accentColor + '18' }]}>
+                  <Plus size={28} color={accentColor} strokeWidth={2} />
                 </View>
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                  {t('home.createFirst')}
+                  CREATE CUSTOM
                 </Text>
                 <Text style={[styles.emptyHint, { color: colors.textTertiary }]}>
-                  {t('home.createHint', { defaultValue: 'Tap to build your custom timer' })}
+                  {t('home.createHint', { defaultValue: 'Build your own timer' })}
                 </Text>
               </Pressable>
             )
@@ -203,34 +201,28 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
 
   /* Header */
-  headerWrap: {
-    paddingHorizontal: layout.screenPadding,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    overflow: 'hidden',
-  },
-  headerRow: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    flex: 1,
+    gap: 2,
   },
-  greetingEmoji: {
-    fontSize: 32,
-    lineHeight: 38,
-  },
-  greetingTitle: {
-    ...typography.h2,
+  greetingLabel: {
+    fontSize: 11,
     fontWeight: '700',
+    letterSpacing: 1.5,
   },
-  greetingSub: {
-    ...typography.caption,
-    marginTop: 1,
+  headerTitle: {
+    fontSize: 30,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: -1.5,
+    lineHeight: 34,
   },
   addBtn: {
     width: 44,
@@ -238,9 +230,9 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: semantic.accent,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 6,
   },
@@ -248,42 +240,44 @@ const styles = StyleSheet.create({
   /* Scroll */
   scrollContent: {
     paddingHorizontal: layout.screenPadding,
-    paddingTop: spacing.xs,
+    paddingTop: spacing.lg,
   },
 
-  /* Section header */
-  sectionHeader: {
+  /* Section rows */
+  sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
-  sectionDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.8,
   },
-  sectionTitle: {
-    ...typography.label,
+  sectionLine: {
     flex: 1,
+    height: 1,
+    opacity: 0.4,
   },
-  limitBadge: {
-    ...typography.caption,
+  limitText: {
+    fontSize: 10,
     fontWeight: '700',
+    letterSpacing: 0.5,
     fontVariant: ['tabular-nums'],
-    marginRight: spacing.xs,
   },
   sectionAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: layout.pillRadius,
   },
   sectionAddText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
 
   /* Empty state */
@@ -291,25 +285,30 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderStyle: 'dashed',
     borderRadius: layout.cardRadius,
-    padding: spacing.xxl,
+    paddingVertical: spacing.xxl + spacing.md,
+    paddingHorizontal: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
   },
-  emptyIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  emptyPlusCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xs,
   },
   emptyTitle: {
-    ...typography.body,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: -0.5,
   },
   emptyHint: {
-    ...typography.caption,
+    fontSize: 13,
+    fontWeight: '500',
     textAlign: 'center',
+    lineHeight: 18,
   },
 });

@@ -6,7 +6,7 @@ import Animated, {
   useSharedValue, withTiming, Easing, cancelAnimation, useAnimatedStyle,
 } from 'react-native-reanimated';
 import { router, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTimerStore } from '../../src/stores/timerStore';
@@ -29,6 +29,7 @@ import { getSoundPackById } from '../../src/constants/sounds';
 export default function TimerScreen() {
   const { t } = useTranslation();
   const { phaseGradient } = useTheme();
+  const insets = useSafeAreaInsets();
   const {
     template,
     status,
@@ -218,16 +219,28 @@ export default function TimerScreen() {
     <View style={styles.container} {...panResponder.current.panHandlers}>
       <AnimatedGradientBg phase={currentPhase} customGradient={gradient} />
 
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+      {/* ── Progress bar ──────────────────────────────────────────────────────
+          Outer container'a absolute olarak yerleştirildi (SafeAreaView dışında).
+          insets.top'un tam üzerinde — status bar / Dynamic Island'ın hemen altında.
+          Bu sayede topBar ile hiçbir zaman çakışmaz. */}
+      <View
+        style={[styles.progressBarContainer, { top: insets.top }]}
+        pointerEvents="none"
+      >
+        <Animated.View style={[styles.progressBarFill, progressBarStyle]} />
+      </View>
 
-        {/* ── Progress bar: SafeAreaView içinde absolute top:0 ──────────────
-            SafeAreaView zaten notch/Dynamic Island padding'ini uyguluyor.
-            Burası her zaman safe area'nın tam tepesinde, topBar'dan bağımsız. */}
-        <View style={styles.progressBarContainer} pointerEvents="none">
-          <Animated.View style={[styles.progressBarFill, progressBarStyle]} />
-        </View>
+      {/* ── İçerik: insets ile kesin pozisyonlama ── */}
+      <View style={[
+        styles.safeContent,
+        {
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+        },
+      ]}>
 
-        {/* ── Top bar: progress bar'ın altında, paddingTop ile net boşluk ── */}
+        {/* Top bar — insets.top zaten paddingTop olarak uygulandı,
+            ekstra spacing.lg ile X butonu her zaman safe zone'un altında */}
         <View style={styles.topBar}>
           <Pressable onPress={handleStop} style={styles.closeBtn} hitSlop={12}>
             <View style={styles.closeBtnBg}>
@@ -296,37 +309,42 @@ export default function TimerScreen() {
         </View>
 
         <Text style={styles.swipeHint}>{t('timer.swipeToStop')}</Text>
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+
+  // Progress bar → outer View'e absolute, top = insets.top (JS'de set ediliyor)
   progressBarContainer: {
-    // SafeAreaView içinde absolute → her zaman safe area'nın tam tepesinde
     position: 'absolute',
-    top: 0,
     left: 0,
     right: 0,
     height: 3,
     overflow: 'hidden',
-    zIndex: 1,
+    zIndex: 10,
   },
   progressBarFill: {
     height: 3,
     backgroundColor: 'rgba(255,255,255,0.85)',
   },
-  safeArea: { flex: 1 },
+
+  // İçerik katmanı: paddingTop/Bottom insets'ten geliyor (JSX'te inline)
+  safeContent: {
+    flex: 1,
+  },
+
+  // topBar: insets.top paddingTop zaten safeContent'te var.
+  // Ekstra spacing.lg → X butonu her zaman progress bar'ın altında.
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: layout.screenPadding,
-    // progress bar 3px + 14px boşluk = X buton progress bar'a asla değmez
-    paddingTop: spacing.lg + 3,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
-    zIndex: 2,  // progress bar'ın üstünde kalır (tıklanabilirlik)
   },
   closeBtn: {
     width: 48,
