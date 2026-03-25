@@ -134,20 +134,13 @@ export default function TimerScreen() {
     }
   }, [currentPhase]);
 
-  if (!template) {
-    router.back();
-    return null;
-  }
-
-  const progress = currentPhaseTotalSeconds > 0
+  // ── Smooth linear progress bar animation ────────────────────────────────
+  // HOOKS MUST be called before any early return (Rules of Hooks)
+  const rawProgress = currentPhaseTotalSeconds > 0
     ? (currentPhaseTotalSeconds - secondsRemaining) / currentPhaseTotalSeconds
     : 0;
 
-  const gradient = phaseGradient(currentPhase);
-  const fontSize = typography.timerCountdown.sizes[timerFontSize] ?? typography.timerCountdown.sizes.normal;
-
-  // ── Smooth linear progress bar animation ────────────────────────────────
-  const animBarProgress = useSharedValue(progress);
+  const animBarProgress = useSharedValue(rawProgress);
   const barPhaseRef = useRef(currentPhase);
   const barSecondsRef = useRef(secondsRemaining);
 
@@ -157,9 +150,9 @@ export default function TimerScreen() {
 
     if (phaseChanged || timerReset) {
       cancelAnimation(animBarProgress);
-      animBarProgress.value = progress;          // instant snap on phase change
+      animBarProgress.value = rawProgress;
     } else {
-      animBarProgress.value = withTiming(progress, {
+      animBarProgress.value = withTiming(rawProgress, {
         duration: 1050,
         easing: Easing.linear,
       });
@@ -172,6 +165,15 @@ export default function TimerScreen() {
     width: `${animBarProgress.value * 100}%` as unknown as number,
   }));
   // ────────────────────────────────────────────────────────────────────────
+
+  if (!template) {
+    router.back();
+    return null;
+  }
+
+  const progress = rawProgress;
+  const gradient = phaseGradient(currentPhase);
+  const fontSize = typography.timerCountdown.sizes[timerFontSize] ?? typography.timerCountdown.sizes.normal;
 
   function handleStop() {
     Alert.alert(
@@ -217,7 +219,15 @@ export default function TimerScreen() {
       <AnimatedGradientBg phase={currentPhase} customGradient={gradient} />
 
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-        {/* Close button */}
+
+        {/* ── Progress bar: SafeAreaView içinde absolute top:0 ──────────────
+            SafeAreaView zaten notch/Dynamic Island padding'ini uyguluyor.
+            Burası her zaman safe area'nın tam tepesinde, topBar'dan bağımsız. */}
+        <View style={styles.progressBarContainer} pointerEvents="none">
+          <Animated.View style={[styles.progressBarFill, progressBarStyle]} />
+        </View>
+
+        {/* ── Top bar: progress bar'ın altında, paddingTop ile net boşluk ── */}
         <View style={styles.topBar}>
           <Pressable onPress={handleStop} style={styles.closeBtn} hitSlop={12}>
             <View style={styles.closeBtnBg}>
@@ -226,11 +236,6 @@ export default function TimerScreen() {
           </Pressable>
           <Text style={styles.templateName} numberOfLines={1}>{template.name}</Text>
           <View style={styles.closeBtn} />
-        </View>
-
-        {/* Progress bar — safe area altında, topBar'ın hemen altında */}
-        <View style={styles.progressBarContainer}>
-          <Animated.View style={[styles.progressBarFill, progressBarStyle]} />
         </View>
 
         {/* Round/Set info */}
@@ -299,9 +304,14 @@ export default function TimerScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   progressBarContainer: {
+    // SafeAreaView içinde absolute → her zaman safe area'nın tam tepesinde
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     height: 3,
     overflow: 'hidden',
-    marginHorizontal: 0,
+    zIndex: 1,
   },
   progressBarFill: {
     height: 3,
@@ -313,8 +323,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: layout.screenPadding,
-    paddingTop: spacing.md,
+    // progress bar 3px + 14px boşluk = X buton progress bar'a asla değmez
+    paddingTop: spacing.lg + 3,
     paddingBottom: spacing.sm,
+    zIndex: 2,  // progress bar'ın üstünde kalır (tıklanabilirlik)
   },
   closeBtn: {
     width: 48,
