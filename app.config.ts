@@ -2,12 +2,12 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'FitTimer',
-  slug: 'fittimer',
+  name: 'Intervl',
+  slug: 'intervl',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
-  scheme: 'fittimer',
+  scheme: 'intervl',
   userInterfaceStyle: 'automatic',
   splash: {
     image: './assets/images/splash-icon.png',
@@ -16,10 +16,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   ios: {
     supportsTablet: false,
-    bundleIdentifier: 'com.fittimer.app',
+    bundleIdentifier: 'com.intervl.app',
     infoPlist: {
       UIBackgroundModes: ['audio'],
-      NSMicrophoneUsageDescription: 'FitTimer uses audio for timer sounds',
+      NSMicrophoneUsageDescription: 'Intervl uses audio for timer sounds',
     },
   },
   android: {
@@ -27,7 +27,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       foregroundImage: './assets/images/adaptive-icon.png',
       backgroundColor: '#000000',
     },
-    package: 'com.fittimer.app',
+    package: 'com.intervl.app',
     permissions: [
       'VIBRATE',
       'RECEIVE_BOOT_COMPLETED',

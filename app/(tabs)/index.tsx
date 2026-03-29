@@ -80,7 +80,7 @@ export default function HomeScreen() {
               {greeting.label}
             </Text>
             <Text style={[styles.headerTitle, { color: colors.text }]}>
-              TABATA
+              INTERVL
             </Text>
           </View>
 
@@ -92,9 +92,12 @@ export default function HomeScreen() {
             ]}
           >
             {atLimit
-              ? <Lock size={18} color="#FFF" strokeWidth={2.5} />
-              : <Plus size={20} color="#FFF" strokeWidth={2.5} />
+              ? <Lock size={13} color="#FFF" strokeWidth={2.5} />
+              : <Plus size={14} color="#FFF" strokeWidth={2.5} />
             }
+            <Text style={styles.addBtnText}>
+              {atLimit ? 'PRO' : 'NEW'}
+            </Text>
           </Pressable>
         </View>
 
@@ -225,16 +228,23 @@ const styles = StyleSheet.create({
     lineHeight: 34,
   },
   addBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: layout.buttonRadius,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 6,
+  },
+  addBtnText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
 
   /* Scroll */

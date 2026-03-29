@@ -67,7 +67,7 @@ export const phaseColors = {
 };
 
 export const semantic = {
-  accent: '#007AFF',
+  accent: '#FF6B35',
   success: '#34C759',
   warning: '#FF9500',
   error: '#FF3B30',

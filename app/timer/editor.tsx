@@ -12,7 +12,7 @@ import { useTimerStore } from '../../src/stores/timerStore';
 import { usePreferencesStore } from '../../src/stores/preferencesStore';
 
 const FREE_TIMER_LIMIT = 3;
-import { semantic } from '../../src/constants/colors';
+import { semantic, colorThemes } from '../../src/constants/colors';
 import { layout, spacing } from '../../src/constants/spacing';
 import { typography } from '../../src/constants/typography';
 import { formatDuration } from '../../src/utils/formatters';
@@ -111,7 +111,7 @@ function CountStepper({
 
 export default function EditorScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { id, readonly } = useLocalSearchParams<{ id?: string; readonly?: string }>();
   const templates = useTemplateStore(s => s.templates);
   const addTemplate = useTemplateStore(s => s.addTemplate);
@@ -141,6 +141,14 @@ export default function EditorScreen() {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const totalDuration = calculateTotal({ prepareSeconds, workSeconds, restSeconds, rounds, sets, restBetweenSetsSeconds: restBetweenSets, cooldownSeconds });
+
+  // Card-style colours — same as TimerCard
+  const cardBg = isDark ? '#161616' : '#F5F5F5';
+  const statsBg = isDark ? '#1E1E1E' : '#EBEBEB';
+  const dividerColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const activeTheme = colorThemes.find(c => c.id === (existing?.colorThemeId ?? 'vivid')) ?? colorThemes[0];
+  const workColor = activeTheme.work[0];
+  const restColor = activeTheme.rest[0];
 
   function validate(): string | null {
     if (!name.trim()) return t('editor.validation.nameRequired');
@@ -244,7 +252,9 @@ export default function EditorScreen() {
               <X size={18} color={colors.text} strokeWidth={2.5} />
             </View>
           </Pressable>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>{screenTitle}</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            {screenTitle.toUpperCase()}
+          </Text>
           {!isReadOnly ? (
             <Pressable onPress={handleSave} style={styles.saveBtn}>
               <Text style={[styles.saveBtnText, { color: semantic.accent }]}>{t('common.save')}</Text>
@@ -255,37 +265,68 @@ export default function EditorScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {/* Name */}
+
+          {/* ── Live card preview ── */}
+          <View style={[styles.previewCard, { backgroundColor: cardBg }]}>
+            <View style={[styles.previewAccentBar, { backgroundColor: workColor }]} />
+            <View style={styles.previewInner}>
+              <Text style={[styles.previewName, { color: colors.text }]} numberOfLines={1}>
+                {name.trim() ? name.toUpperCase() : 'TIMER NAME'}
+              </Text>
+              <View style={[styles.previewStats, { backgroundColor: statsBg }]}>
+                <View style={styles.previewStatCell}>
+                  <Text style={[styles.previewStatValue, { color: workColor }]}>{workSeconds}</Text>
+                  <Text style={[styles.previewStatUnit, { color: colors.textTertiary }]}>WORK</Text>
+                </View>
+                <View style={[styles.previewDivider, { backgroundColor: dividerColor }]} />
+                <View style={styles.previewStatCell}>
+                  <Text style={[styles.previewStatValue, { color: restColor }]}>{restSeconds}</Text>
+                  <Text style={[styles.previewStatUnit, { color: colors.textTertiary }]}>REST</Text>
+                </View>
+                <View style={[styles.previewDivider, { backgroundColor: dividerColor }]} />
+                <View style={styles.previewStatCell}>
+                  <Text style={[styles.previewStatValue, { color: colors.textSecondary }]}>{rounds}</Text>
+                  <Text style={[styles.previewStatUnit, { color: colors.textTertiary }]}>ROUNDS</Text>
+                </View>
+              </View>
+              <View style={styles.previewFooter}>
+                <Text style={[styles.previewDuration, { color: colors.textTertiary }]}>
+                  {formatDuration(totalDuration)}
+                </Text>
+                <View style={[styles.previewPlayBtn, { backgroundColor: workColor }]}>
+                  <Play size={14} color="#000" fill="#000" strokeWidth={0} />
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Name input — card style with left accent bar */}
           {!isReadOnly && (
-            <View style={[styles.card, { backgroundColor: colors.backgroundPrimary, borderColor: colors.border }]}>
-              <Text style={[styles.fieldLabel, { color: colors.textTertiary }]}>{t('editor.name').toUpperCase()}</Text>
-              <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder={t('editor.namePlaceholder')}
-                placeholderTextColor={colors.textTertiary}
-                style={[styles.nameInput, { color: colors.text }]}
-                maxLength={50}
-                editable={!isReadOnly}
-              />
+            <View style={[styles.nameCard, { backgroundColor: cardBg }]}>
+              <View style={[styles.nameCardAccent, { backgroundColor: workColor }]} />
+              <View style={styles.nameCardInner}>
+                <Text style={[styles.fieldLabel, { color: colors.textTertiary }]}>{t('editor.name').toUpperCase()}</Text>
+                <TextInput
+                  value={name}
+                  onChangeText={setName}
+                  placeholder={t('editor.namePlaceholder')}
+                  placeholderTextColor={colors.textTertiary}
+                  style={[styles.nameInput, { color: colors.text }]}
+                  maxLength={50}
+                  editable={!isReadOnly}
+                />
+              </View>
             </View>
           )}
 
-          {/* Total duration badge */}
-          <View style={[styles.durationBadge, { backgroundColor: semantic.accent + '15' }]}>
-            <Text style={[styles.durationText, { color: semantic.accent }]}>
-              {t('editor.totalDuration')}: {formatDuration(totalDuration)}
-            </Text>
-          </View>
-
           {/* Main fields */}
-          <View style={[styles.card, { backgroundColor: colors.backgroundPrimary, borderColor: colors.border }]}>
+          <View style={[styles.card, { backgroundColor: cardBg }]}>
             <Stepper value={workSeconds} onChange={setWorkSeconds} min={1} max={600} step={5} label={t('editor.workTime')} />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
             <Stepper value={restSeconds} onChange={setRestSeconds} min={0} max={300} step={5} label={t('editor.restTime')} />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
             <CountStepper value={rounds} onChange={setRounds} min={1} max={99} label={t('editor.rounds')} />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
             <CountStepper value={sets} onChange={setSets} min={1} max={20} label={t('editor.sets')} />
           </View>
 
@@ -300,7 +341,7 @@ export default function EditorScreen() {
           </Pressable>
 
           {showAdvanced && (
-            <View style={[styles.card, { backgroundColor: colors.backgroundPrimary, borderColor: colors.border }]}>
+            <View style={[styles.card, { backgroundColor: cardBg }]}>
               <Stepper value={prepareSeconds} onChange={setPrepareSeconds} min={0} max={60} step={5} label={t('editor.prepareTime')} />
               <View style={styles.divider} />
               <Stepper value={cooldownSeconds} onChange={setCooldownSeconds} min={0} max={300} step={10} label={t('editor.cooldownTime')} />
@@ -390,7 +431,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { ...typography.h3 },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: -0.5,
+  },
   saveBtn: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -400,39 +446,127 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.screenPadding,
     paddingTop: spacing.sm,
   },
+  // Main stepper card — no border, uses cardBg (set inline)
   card: {
     borderRadius: layout.cardRadius,
-    borderWidth: 1,
     overflow: 'hidden',
     marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+
+  // Name input — card with left accent bar
+  nameCard: {
+    flexDirection: 'row',
+    borderRadius: layout.cardRadius,
+    overflow: 'hidden',
+    marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  nameCardAccent: { width: 5 },
+  nameCardInner: {
+    flex: 1,
+    paddingHorizontal: layout.cardPadding,
+    paddingVertical: spacing.md,
   },
   fieldLabel: {
     ...typography.label,
-    paddingHorizontal: layout.cardPadding,
-    paddingTop: layout.cardPadding,
-    paddingBottom: spacing.xs,
+    marginBottom: spacing.xs,
   },
   nameInput: {
-    ...typography.h3,
-    paddingHorizontal: layout.cardPadding,
-    paddingBottom: layout.cardPadding,
+    fontSize: 22,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: -0.8,
     minHeight: 44,
+    paddingTop: spacing.xs,
   },
-  durationBadge: {
-    alignSelf: 'flex-start',
-    borderRadius: layout.pillRadius,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+
+  // Live preview card
+  previewCard: {
+    flexDirection: 'row',
+    borderRadius: layout.cardRadius,
+    overflow: 'hidden',
     marginBottom: spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
   },
-  durationText: { ...typography.caption, fontWeight: '700' },
+  previewAccentBar: { width: 5 },
+  previewInner: {
+    flex: 1,
+    padding: layout.cardPadding,
+    gap: spacing.md,
+  },
+  previewName: {
+    fontSize: 22,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: -0.8,
+    lineHeight: 26,
+  },
+  previewStats: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  previewStatCell: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    gap: 2,
+  },
+  previewStatValue: {
+    fontSize: 28,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: -1,
+    lineHeight: 32,
+    fontVariant: ['tabular-nums'],
+  },
+  previewStatUnit: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    lineHeight: 12,
+  },
+  previewDivider: {
+    width: 1,
+    marginVertical: spacing.sm,
+  },
+  previewFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  previewDuration: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  previewPlayBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   stepperRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: layout.cardPadding,
     paddingVertical: spacing.md,
-    minHeight: 56,
+    minHeight: 60,
   },
   stepperLabel: { ...typography.body },
   stepperControls: {
@@ -448,15 +582,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stepperValue: {
-    ...typography.body,
-    fontWeight: '600',
-    minWidth: 48,
+    fontSize: 22,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: -0.5,
+    minWidth: 52,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(0,0,0,0.08)',
     marginHorizontal: layout.cardPadding,
   },
   advancedToggle: {
