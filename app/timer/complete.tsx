@@ -1,21 +1,20 @@
 import React, { useEffect } from 'react';
-import {
-  View, Text, StyleSheet, Pressable,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { CheckCircle, Clock, RotateCcw, Home } from 'lucide-react-native';
+import { RotateCcw, Home, Check } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTimerStore } from '../../src/stores/timerStore';
-import { StatCard } from '../../src/components/ui/StatCard';
-import { semantic } from '../../src/constants/colors';
+import { useTheme } from '../../src/hooks/useTheme';
+import { colorThemes, semantic } from '../../src/constants/colors';
 import { layout, spacing } from '../../src/constants/spacing';
 import { typography } from '../../src/constants/typography';
 import { formatDuration } from '../../src/utils/formatters';
 
 export default function CompleteScreen() {
   const { t } = useTranslation();
+  const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const { template, totalElapsedSeconds, stop } = useTimerStore();
 
   const templateRef = React.useRef(template);
@@ -28,168 +27,283 @@ export default function CompleteScreen() {
     }
   }, []);
 
+  const tmpl = templateRef.current;
+  const dur = durationRef.current;
+
+  const cardBg   = isDark ? '#161616' : '#F5F5F5';
+  const statsBg  = isDark ? '#1E1E1E' : '#EBEBEB';
+  const divColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const sectionLabelColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
+
+  const activeTheme = colorThemes.find(c => c.id === (tmpl?.colorThemeId ?? 'vivid')) ?? colorThemes[0];
+  const accentColor = activeTheme.work[0];
+  const restColor   = activeTheme.rest[0];
+
   function handleDone() {
     stop();
     router.replace('/(tabs)');
   }
 
   function handleRestart() {
-    const t = templateRef.current;
-    if (t) {
+    const tpl = templateRef.current;
+    if (tpl) {
       stop();
-      useTimerStore.getState().start(t);
-      router.replace(`/timer/${t.id}`);
+      useTimerStore.getState().start(tpl);
+      router.replace(`/timer/${tpl.id}`);
     } else {
       handleDone();
     }
   }
 
-  const tmpl = templateRef.current;
-  const dur = durationRef.current;
-
   return (
-    <LinearGradient colors={['#1a1a2e', '#0f3460']} style={styles.container}>
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-        <View style={styles.content}>
-          {/* Trophy */}
-          <View style={styles.iconWrap}>
-            <CheckCircle size={72} color={semantic.success} />
-          </View>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
 
-          <Text style={styles.title}>{t('complete.title')}</Text>
-          <Text style={styles.subtitle}>{t('complete.greatJob')}</Text>
+      {/* ── Content ── */}
+      <View style={styles.content}>
 
-          {tmpl && (
-            <Text style={styles.workoutName}>{tmpl.name}</Text>
-          )}
-
-          {/* Stats */}
-          <View style={styles.statsRow}>
-            <StatCard
-              value={formatDuration(dur)}
-              label={t('complete.duration')}
-              icon={<Clock size={18} color={semantic.accent} />}
-              style={styles.statCard}
-            />
-            {tmpl && (
-              <StatCard
-                value={tmpl.rounds}
-                label={t('complete.rounds')}
-                style={styles.statCard}
-              />
-            )}
-            {tmpl && tmpl.sets > 1 && (
-              <StatCard
-                value={tmpl.sets}
-                label={t('complete.sets')}
-                style={styles.statCard}
-              />
-            )}
-          </View>
+        {/* Section label */}
+        <View style={styles.sectionRow}>
+          <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>
+            WORKOUT COMPLETE
+          </Text>
+          <View style={[styles.sectionLine, { backgroundColor: sectionLabelColor }]} />
         </View>
 
-        {/* Actions */}
-        <View style={styles.actions}>
-          <Pressable
-            onPress={handleRestart}
-            style={({ pressed }) => [styles.secondaryBtn, { opacity: pressed ? 0.7 : 1 }]}
-          >
-            <RotateCcw size={18} color="#FFFFFF" />
-            <Text style={styles.secondaryText}>Restart</Text>
-          </Pressable>
+        {/* Result card */}
+        <View style={[styles.card, { backgroundColor: cardBg }]}>
+          <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
+          <View style={styles.cardInner}>
 
-          <Pressable
-            onPress={handleDone}
-            style={({ pressed }) => [styles.primaryBtn, { opacity: pressed ? 0.85 : 1 }]}
-          >
-            <LinearGradient
-              colors={[semantic.accent, '#0055CC']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.primaryBtnGradient}
-            >
-              <Home size={18} color="#FFFFFF" />
-              <Text style={styles.primaryText}>{t('complete.done')}</Text>
-            </LinearGradient>
-          </Pressable>
+            {/* Check badge + name */}
+            <View style={styles.topRow}>
+              <View style={[styles.checkBadge, { backgroundColor: accentColor + '22' }]}>
+                <Check size={20} color={accentColor} strokeWidth={3} />
+              </View>
+              <View style={styles.nameBlock}>
+                <Text style={[styles.workoutName, { color: colors.text }]} numberOfLines={1}>
+                  {tmpl?.name.toUpperCase() ?? 'WORKOUT'}
+                </Text>
+                <Text style={[styles.subtitle, { color: colors.textTertiary }]}>
+                  {t('complete.greatJob')}
+                </Text>
+              </View>
+            </View>
+
+            {/* Stats grid */}
+            <View style={[styles.statsGrid, { backgroundColor: statsBg }]}>
+              <View style={styles.statCell}>
+                <Text style={[styles.statValue, { color: accentColor }]}>
+                  {formatDuration(dur)}
+                </Text>
+                <Text style={[styles.statLabel, { color: colors.textTertiary }]}>
+                  {t('complete.duration').toUpperCase()}
+                </Text>
+              </View>
+
+              <View style={[styles.statDivider, { backgroundColor: divColor }]} />
+
+              <View style={styles.statCell}>
+                <Text style={[styles.statValue, { color: restColor }]}>
+                  {tmpl?.rounds ?? '—'}
+                </Text>
+                <Text style={[styles.statLabel, { color: colors.textTertiary }]}>
+                  {t('complete.rounds').toUpperCase()}
+                </Text>
+              </View>
+
+              {tmpl && tmpl.sets > 1 && (
+                <>
+                  <View style={[styles.statDivider, { backgroundColor: divColor }]} />
+                  <View style={styles.statCell}>
+                    <Text style={[styles.statValue, { color: colors.textSecondary }]}>
+                      {tmpl.sets}
+                    </Text>
+                    <Text style={[styles.statLabel, { color: colors.textTertiary }]}>
+                      {t('complete.sets').toUpperCase()}
+                    </Text>
+                  </View>
+                </>
+              )}
+            </View>
+
+          </View>
         </View>
-      </SafeAreaView>
-    </LinearGradient>
+      </View>
+
+      {/* ── Actions ── */}
+      <View style={[styles.actions, { paddingHorizontal: layout.screenPadding }]}>
+        <Pressable
+          onPress={handleRestart}
+          style={({ pressed }) => [
+            styles.restartBtn,
+            { borderColor: divColor, backgroundColor: cardBg, opacity: pressed ? 0.7 : 1 },
+          ]}
+        >
+          <RotateCcw size={16} color={colors.textSecondary} strokeWidth={2.5} />
+          <Text style={[styles.restartText, { color: colors.textSecondary }]}>
+            {t('complete.restart', { defaultValue: 'Restart' }).toUpperCase()}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={handleDone}
+          style={({ pressed }) => [
+            styles.doneBtn,
+            { backgroundColor: accentColor, opacity: pressed ? 0.85 : 1 },
+          ]}
+        >
+          <Home size={16} color="#000" strokeWidth={2.5} />
+          <Text style={styles.doneText}>
+            {t('complete.done').toUpperCase()}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  safeArea: { flex: 1, justifyContent: 'space-between' },
+  container: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
   content: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: layout.screenPadding,
     gap: spacing.lg,
   },
-  iconWrap: {
-    marginBottom: spacing.md,
+
+  /* Section label row */
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  title: {
-    ...typography.h1,
-    color: '#FFFFFF',
-    textAlign: 'center',
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.8,
   },
-  subtitle: {
-    ...typography.body,
-    color: 'rgba(255,255,255,0.65)',
-    textAlign: 'center',
+  sectionLine: {
+    flex: 1,
+    height: 1,
+    opacity: 0.4,
+  },
+
+  /* Result card — same as TimerCard */
+  card: {
+    borderRadius: layout.cardRadius,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  accentBar: {
+    width: 5,
+  },
+  cardInner: {
+    flex: 1,
+    padding: layout.cardPadding,
+    gap: spacing.md,
+  },
+
+  /* Top row: check badge + name */
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  checkBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nameBlock: {
+    flex: 1,
+    gap: 2,
   },
   workoutName: {
-    ...typography.h3,
-    color: 'rgba(255,255,255,0.8)',
+    fontSize: 22,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: -0.5,
+    lineHeight: 26,
   },
-  statsRow: {
+  subtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  /* Stats grid — same as TimerCard stats section */
+  statsGrid: {
     flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.xl,
-    width: '100%',
+    borderRadius: layout.cardRadiusSmall,
+    overflow: 'hidden',
   },
-  statCard: { flex: 1 },
+  statCell: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    gap: 3,
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '700',
+    fontStyle: 'italic',
+    letterSpacing: -0.5,
+    fontVariant: ['tabular-nums'],
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  statDivider: {
+    width: 1,
+    marginVertical: spacing.sm,
+  },
+
+  /* Buttons */
   actions: {
     flexDirection: 'row',
     gap: spacing.md,
-    paddingHorizontal: layout.screenPadding,
     paddingBottom: spacing.xxl,
   },
-  secondaryBtn: {
+  restartBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.lg,
-    borderRadius: layout.pillRadius,
+    borderRadius: layout.cardRadius,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
   },
-  secondaryText: {
-    color: '#FFFFFF',
-    ...typography.body,
-    fontWeight: '600',
+  restartText: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  primaryBtn: {
+  doneBtn: {
     flex: 2,
-    borderRadius: layout.pillRadius,
-    overflow: 'hidden',
-  },
-  primaryBtnGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xxl,
+    borderRadius: layout.cardRadius,
   },
-  primaryText: {
-    color: '#FFFFFF',
-    ...typography.body,
-    fontWeight: '700',
+  doneText: {
+    color: '#000',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
 });

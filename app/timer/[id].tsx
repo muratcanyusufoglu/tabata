@@ -94,7 +94,9 @@ export default function TimerScreen() {
   useEffect(() => {
     if (prevPhaseRef.current !== currentPhase) {
       prevPhaseRef.current = currentPhase;
-      audioService.playPhaseTransition(currentPhase, timerVolume).catch(() => {});
+      if (countdownSoundEnabled) {
+        audioService.playPhaseTransition(currentPhase, timerVolume).catch(() => {});
+      }
       if (currentPhase === 'work') {
         hapticService.heavy().catch(() => {});
       } else if (currentPhase === 'completed') {

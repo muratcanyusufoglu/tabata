@@ -24,6 +24,13 @@ export default function RootLayout() {
   const recalculate = useTimerStore(s => s.recalculateFromBackground);
   const [toast, setToast] = useState<string | null>(null);
 
+  // Onboarding redirect — runs whenever hasCompletedOnboarding changes
+  useEffect(() => {
+    if (!hasCompletedOnboarding) {
+      router.replace('/onboarding');
+    }
+  }, [hasCompletedOnboarding]);
+
   useEffect(() => {
     // Init
     configureAudioSession();

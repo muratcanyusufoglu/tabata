@@ -1,20 +1,18 @@
 import { SoundPack } from '../types';
 
-// Sound assets - placeholder requires for now
-// Real .wav files need to be placed in assets/sounds/
 export const soundPacks: SoundPack[] = [
   {
     id: 'minimal',
     name: 'Minimal',
     isPremium: false,
     sounds: {
-      workStart: null,
-      restStart: null,
-      countdown3: null,
-      countdown2: null,
-      countdown1: null,
-      setComplete: null,
-      workoutComplete: null,
+      workStart: require('../../assets/sounds/work_start.mp3'),
+      restStart: require('../../assets/sounds/rest_start.wav'),
+      countdown3: require('../../assets/sounds/countdown3.wav'),
+      countdown2: require('../../assets/sounds/countdown2.wav'),
+      countdown1: require('../../assets/sounds/countdown1.wav'),
+      setComplete: require('../../assets/sounds/set_complete.mp3'),
+      workoutComplete: require('../../assets/sounds/complete.mp3'),
     },
   },
   {
@@ -22,13 +20,13 @@ export const soundPacks: SoundPack[] = [
     name: 'Energetic',
     isPremium: false,
     sounds: {
-      workStart: null,
-      restStart: null,
-      countdown3: null,
-      countdown2: null,
-      countdown1: null,
-      setComplete: null,
-      workoutComplete: null,
+      workStart: require('../../assets/sounds/work_start.mp3'),
+      restStart: require('../../assets/sounds/rest_start.wav'),
+      countdown3: require('../../assets/sounds/countdown3.wav'),
+      countdown2: require('../../assets/sounds/countdown2.wav'),
+      countdown1: require('../../assets/sounds/countdown1.wav'),
+      setComplete: require('../../assets/sounds/set_complete.mp3'),
+      workoutComplete: require('../../assets/sounds/complete.mp3'),
     },
   },
   {

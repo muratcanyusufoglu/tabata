@@ -1,19 +1,23 @@
-import React, { useRef, useState } from 'react';
+import {router} from 'expo-router';
+import {ChevronRight, Crown, Volume2} from 'lucide-react-native';
+import React, {useRef, useState} from 'react';
+import {useTranslation} from 'react-i18next';
 import {
-  View, Text, ScrollView, StyleSheet, Switch, Pressable, Alert,
-  PanResponder, Animated,
+  Animated,
+  PanResponder,
+  Pressable,
+  ScrollView, StyleSheet, Switch,
+  Text,
+  View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { ChevronRight, Crown, Volume2 } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../src/hooks/useTheme';
-import { usePreferencesStore } from '../../src/stores/preferencesStore';
-import { semantic, colorThemes } from '../../src/constants/colors';
-import { layout, spacing } from '../../src/constants/spacing';
-import { typography } from '../../src/constants/typography';
-import { soundPacks } from '../../src/constants/sounds';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {colorThemes, semantic} from '../../src/constants/colors';
+import {soundPacks} from '../../src/constants/sounds';
+import {layout, spacing} from '../../src/constants/spacing';
+import {typography} from '../../src/constants/typography';
+import {useTheme} from '../../src/hooks/useTheme';
 import i18n from '../../src/i18n';
+import {usePreferencesStore} from '../../src/stores/preferencesStore';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -34,7 +38,7 @@ const LANGUAGES = [
 
 const THUMB_SIZE = 22;
 const TRACK_HEIGHT = 4;
-
+  
 // Clean implementation using measured-width approach
 function VolumeSliderFinal({
   value,
@@ -194,7 +198,7 @@ function SettingsRow({
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
-        { backgroundColor: colors.backgroundPrimary, opacity: pressed ? 0.7 : 1 },
+        { opacity: pressed ? 0.7 : 1 },
       ]}
       disabled={!onPress}
     >
@@ -209,12 +213,6 @@ function SettingsRow({
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
-  const { colors } = useTheme();
-  return (
-    <Text style={[styles.sectionHeader, { color: colors.textTertiary }]}>{title.toUpperCase()}</Text>
-  );
-}
 
 function SegmentedControl({
   options,
@@ -252,10 +250,15 @@ function SegmentedControl({
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const prefs = usePreferencesStore();
 
   const currentLang = prefs.language ?? i18n.language.split('-')[0];
+
+  // TimerCard ile aynı renk sistemi
+  const cardBg = isDark ? '#161616' : '#F5F5F5';
+  const dividerColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const sectionLabelColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
 
   const themeOptions = [
     { label: t('settings.themeSystem'), value: 'system' },
@@ -273,7 +276,9 @@ export default function SettingsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>{t('settings.title')}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>
+            {t('settings.title').toUpperCase()}
+          </Text>
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -292,8 +297,11 @@ export default function SettingsScreen() {
           )}
 
           {/* Appearance */}
-          <SectionHeader title={t('settings.appearance')} />
-          <View style={[styles.card, { backgroundColor: colors.backgroundPrimary, borderColor: colors.border }]}>
+          <View style={[styles.sectionRow, { marginTop: spacing.lg }]}>
+            <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>{t('settings.appearance').toUpperCase()}</Text>
+            <View style={[styles.sectionLine, { backgroundColor: sectionLabelColor }]} />
+          </View>
+          <View style={[styles.card, { backgroundColor: cardBg }]}>
             <View style={styles.cardRow}>
               <Text style={[styles.rowLabel, { color: colors.text }]}>{t('settings.theme')}</Text>
               <SegmentedControl
@@ -302,7 +310,7 @@ export default function SettingsScreen() {
                 onChange={v => prefs.setThemeMode(v as 'system' | 'light' | 'dark')}
               />
             </View>
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
             <View style={styles.cardRow}>
               <Text style={[styles.rowLabel, { color: colors.text }]}>{t('settings.timerFontSize')}</Text>
               <SegmentedControl
@@ -314,7 +322,7 @@ export default function SettingsScreen() {
           </View>
 
           {/* Color theme */}
-          <View style={[styles.card, { backgroundColor: colors.backgroundPrimary, borderColor: colors.border }]}>
+          <View style={[styles.card, { backgroundColor: cardBg }]}>
             <Text style={[styles.rowLabel, { color: colors.text, marginBottom: spacing.md }]}>{t('settings.colorTheme')}</Text>
             <View style={styles.themeRow}>
               {colorThemes.map(theme => (
@@ -343,8 +351,11 @@ export default function SettingsScreen() {
           </View>
 
           {/* Sound */}
-          <SectionHeader title={t('settings.sound')} />
-          <View style={[styles.card, { backgroundColor: colors.backgroundPrimary, borderColor: colors.border }]}>
+          <View style={[styles.sectionRow, { marginTop: spacing.lg }]}>
+            <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>{t('settings.sound').toUpperCase()}</Text>
+            <View style={[styles.sectionLine, { backgroundColor: sectionLabelColor }]} />
+          </View>
+          <View style={[styles.card, { backgroundColor: cardBg }]}>
             <SettingsRow
               label={t('settings.haptics')}
               right={
@@ -355,7 +366,7 @@ export default function SettingsScreen() {
                 />
               }
             />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
             <SettingsRow
               label={t('settings.countdownSound')}
               right={
@@ -366,10 +377,10 @@ export default function SettingsScreen() {
                 />
               }
             />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
 
             {/* Volume slider row */}
-            <View style={[styles.row, { backgroundColor: colors.backgroundPrimary }]}>
+            <View style={styles.row}>
               <Text style={[styles.rowLabel, { color: colors.text }]}>
                 {t('settings.volume') ?? 'Volume'}
               </Text>
@@ -380,10 +391,10 @@ export default function SettingsScreen() {
                 />
               </View>
             </View>
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
 
             {/* Sound pack selector */}
-            <View style={[styles.soundPackRow, { backgroundColor: colors.backgroundPrimary }]}>
+            <View style={styles.soundPackRow}>
               <Text style={[styles.rowLabel, { color: colors.text, marginBottom: spacing.md }]}>
                 {t('settings.soundPack') ?? 'Sound Pack'}
               </Text>
@@ -420,8 +431,11 @@ export default function SettingsScreen() {
           </View>
 
           {/* Timer defaults */}
-          <SectionHeader title={t('settings.timerDefaults')} />
-          <View style={[styles.card, { backgroundColor: colors.backgroundPrimary, borderColor: colors.border }]}>
+          <View style={[styles.sectionRow, { marginTop: spacing.lg }]}>
+            <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>{t('settings.timerDefaults').toUpperCase()}</Text>
+            <View style={[styles.sectionLine, { backgroundColor: sectionLabelColor }]} />
+          </View>
+          <View style={[styles.card, { backgroundColor: cardBg }]}>
             <SettingsRow
               label={t('settings.keepScreenAwake')}
               right={
@@ -435,8 +449,11 @@ export default function SettingsScreen() {
           </View>
 
           {/* Language */}
-          <SectionHeader title={t('settings.language')} />
-          <View style={[styles.card, { backgroundColor: colors.backgroundPrimary, borderColor: colors.border }]}>
+          <View style={[styles.sectionRow, { marginTop: spacing.lg }]}>
+            <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>{t('settings.language').toUpperCase()}</Text>
+            <View style={[styles.sectionLine, { backgroundColor: sectionLabelColor }]} />
+          </View>
+          <View style={[styles.card, { backgroundColor: cardBg }]}>
             <View style={[styles.cardRow, { flexWrap: 'wrap', gap: spacing.sm }]}>
               {LANGUAGES.map(lang => (
                 <Pressable
@@ -459,19 +476,22 @@ export default function SettingsScreen() {
           </View>
 
           {/* About */}
-          <SectionHeader title={t('settings.about')} />
-          <View style={[styles.card, { backgroundColor: colors.backgroundPrimary, borderColor: colors.border }]}>
+          <View style={[styles.sectionRow, { marginTop: spacing.lg }]}>
+            <Text style={[styles.sectionLabel, { color: sectionLabelColor }]}>{t('settings.about').toUpperCase()}</Text>
+            <View style={[styles.sectionLine, { backgroundColor: sectionLabelColor }]} />
+          </View>
+          <View style={[styles.card, { backgroundColor: cardBg }]}>
             <SettingsRow label={t('settings.rateApp')} onPress={() => {}} />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
             <SettingsRow label={t('settings.sendFeedback')} onPress={() => {}} />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
             <SettingsRow label={t('settings.privacyPolicy')} onPress={() => {}} />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: dividerColor }]} />
             <SettingsRow label={t('settings.termsOfService')} onPress={() => {}} />
           </View>
 
           {prefs.isPremium && (
-            <View style={[styles.card, { backgroundColor: colors.backgroundPrimary, borderColor: colors.border }]}>
+            <View style={[styles.card, { backgroundColor: cardBg }]}>
               <SettingsRow label={t('settings.restorePurchases')} onPress={() => {}} />
             </View>
           )}
@@ -491,7 +511,13 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
   },
-  title: { ...typography.h2 },
+  title: {
+    fontSize: 30,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: -1.5,
+    lineHeight: 34,
+  },
   scrollContent: {
     paddingHorizontal: layout.screenPadding,
     paddingTop: spacing.md,
@@ -505,17 +531,32 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   premiumText: { flex: 1, ...typography.body, fontWeight: '600' },
-  sectionHeader: {
-    ...typography.label,
-    marginBottom: spacing.sm,
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.sm,
+  // Section row — home screen ile aynı pattern
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.8,
+  },
+  sectionLine: {
+    flex: 1,
+    height: 1,
+    opacity: 0.4,
   },
   card: {
     borderRadius: layout.cardRadius,
-    borderWidth: 1,
     overflow: 'hidden',
     marginBottom: spacing.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
   },
   cardRow: {
     padding: layout.cardPadding,
@@ -534,7 +575,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(0,0,0,0.08)' },
+  divider: { height: StyleSheet.hairlineWidth },
   segmented: {
     flexDirection: 'row',
     borderRadius: 8,
